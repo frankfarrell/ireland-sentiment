@@ -11,10 +11,12 @@ import tornado.ioloop
 import tornado.web
 import json
 import time
+from tweetclassifier import Classifier
 
 class PikaClient(object):
 
     def __init__(self, config, app=None):
+        self.classifier = Classifier()
         # Connection params
         self.host = config['host'] or 'localhost'
         self.port = config['port'] or '5672'
@@ -131,9 +133,8 @@ class PikaClient(object):
     def notify_listeners(self, event_obj):
         # here we assume the message the sourcing app
         # post to the message queue is in JSON format
-        event_json = json.dumps(event_obj)
- 
-        for listener in self.event_listeners:
+        event_json = self.classify_text(event_obj)
+        for listener in self.event_listeners: 
             listener.write_message(event_json)
             print('PikaClient: notified %s' % repr(listener))
  
@@ -169,3 +170,15 @@ class PikaClient(object):
                                    #body='Message: %s - %s' % (msg, body),
                                    body='Message: %s' % msg,
                                    properties=properties)
+    
+    def classify_text(self,event_json):
+        #Temporaray: Processing should happen in intermediary handler
+		#Parse JSON, return JSON with text geo and polarity
+        print "CLASSIFIER MESSAGE " + event_json
+        parsedJson  =json.loads(event_json)
+        tweettext = parsedJson['text'] 
+        tweetgeo = parsedJson['geo']
+        #tweetplace = parsedJson['place']
+        #tweetcoords = parsedJson['coordinates']		
+        tweet_polarity = self.classifier.classify(tweettext)
+        return {'text':tweettext, 'geo': tweetgeo, 'polarity':tweet_polarity}#, 'place':tweetplace,'coordinates':tweetcoords}

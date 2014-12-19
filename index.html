@@ -12,15 +12,18 @@
     />
 </head>
 <body>
-	<div id="map" style="width: 600px; height: 400px"></div>
+	<div id="map" style="width: 600px; height: 700px"></div>
 
 	<script
         src="http://cdn.leafletjs.com/leaflet-0.7/leaflet.js">
     </script>
+	<script
+        src="d3.js">
+    </script>
 	<script>
 
-		var map = L.map('map').setView([-10.9795,55.4015], 13);
-
+		var map = L.map('map').fitBounds([[55.4015,-10.9795],[51.417,-5.4271,]]);
+		map.dragging.disable();
 		L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
 			maxZoom: 18,
 			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
@@ -29,16 +32,109 @@
 			id: 'examples.map-i875mjb7'
 		}).addTo(map);
 
+		var bounds = map.getBounds();
+		var drawLimit = bounds;
+		var tweetpoints= [];
+		
+		var mapLayer = {
+		  onAdd: function(map) {
+			map.on('viewreset moveend', drawLayer);
+
+			drawLayer();
+		  }
+		};
+
+		map.addLayer(mapLayer);
+
 		var ws = new WebSocket('ws://localhost:8888/ws');
 		
 		ws.onmessage = function(evt){
-		   var data = JSON.parse(JSON.parse(evt.data));
-		   var coords = data.geo.coordinates;
-		   var marker = L.marker(coords).addTo(map);
-		   marker.bindPopup(data.text).openPopup();
+			console.log("Message Received: " + evt);
+		    var data = (JSON.parse(evt.data));
+			var coords = null;
+			if(data.geo){
+				coords = data.geo.coordinates;
+			}
+			else if(data.coordinates){
+				coords = data.coordinates;
+			}
+			else if(data.place){
+				console.log("Tweet at "+data.place+" has no coordinates");
+			}
+			else{
+				console.log("No Geo Data");
+			}
+			
+			//Put this inside drawLayer so it can update on Drag/Zoom
+			if(coords){
+				var latlng = new L.LatLng(coords[0], coords[1]);
+				if(drawLimit.contains(latlng)){
+					var point = map.latLngToLayerPoint(latlng);
+					point.polarity = data.polarity;
+					point.text = data.text;
+					tweetpoints.push(point);
+					drawLayer();
+					var marker = L.marker(coords).addTo(map);
+					marker.bindPopup(data.text).openPopup();
+				}
+			}
 		}
 		
-		
+		function drawLayer(){
+			if(tweetpoints.length>0){
+				
+				d3.select('#overlay').remove();
+				
+				//var bounds = map.getBounds();
+				var topLeft = map.latLngToLayerPoint(bounds.getNorthWest()),
+					bottomRight = map.latLngToLayerPoint(bounds.getSouthEast());
+			
+				var svg = d3.select(map.getPanes().overlayPane).append("svg")
+				  .attr('id', 'overlay')
+				  .attr("class", "leaflet-zoom-hide")
+				  .style("width", map.getSize().x + 'px')
+				  .style("height", map.getSize().y + 'px')
+				  .style("margin-left", topLeft.x + "px")
+				  .style("margin-top", topLeft.y + "px");
+				
+				var buildPathFromPoint = function(point) {
+					return "M" + point.join("L") + "Z";
+				}
+				 
+				var voronoiFunction = d3.geom.voronoi()
+				.x(function(d){return d.x;})
+				.y(function(d){return d.y;}) 
+				
+				var svgPoints = svg.selectAll("g")
+					  .data(voronoiFunction(tweetpoints))
+					  .enter()
+					  .append("g")
+
+				svgPoints.append("circle")
+					.attr("transform", function(d) 
+					{ 
+						return "translate(" + d.point.x + "," + d.point.y + ")"; 
+					})
+					.attr("r", 2);
+					  
+				svgPoints.append("path")
+				  .attr("class", "point-cell")
+				  .attr("d", buildPathFromPoint)
+				  .attr('opacity', '0.4')
+				  .attr('stroke-width' , '1')
+				  .attr('stroke', 'black')
+				  .attr("fill", function(d){
+							if(d.point.polarity == 0){
+								return 'red';
+							}
+							else{
+								return 'green';
+							}
+				  });
+				  //.on('click', selectPoint)
+				  //.classed("selected", function(d) { return lastSelectedPoint == d} );
+				}
+		}
 		
 
 	</script>
