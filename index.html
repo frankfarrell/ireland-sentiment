@@ -183,6 +183,9 @@
 					  //.text(function(d){
 					//		return d.text;
 					//});
+				svgPoints.append("svg:title").text(function(d){
+					return d.point.text;
+				});
 
 				svgPoints.append("circle")
 					.attr("transform", function(d) 
