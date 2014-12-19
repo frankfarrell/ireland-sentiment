@@ -156,6 +156,7 @@
 				  
 				var tweetpoints = [];
 				messages.forEach(function(tweet){
+				
 					var latlng = new L.LatLng(tweet.coords[0], tweet.coords[1]);
 					
 					if(drawLimit.contains(latlng)){
@@ -164,7 +165,12 @@
 						point.y =point.y - topLeft.y;
 						point.polarity = tweet.polarity;
 						point.text = tweet.text;
-						tweetpoints.push(point);
+						
+						var uniquePoint = !tweetpoints.some(function(e){
+							return e.x === point.x && e.y === point.y;
+						});
+						
+						uniquePoint?tweetpoints.push(point):null;
 					}
 				});
 				
