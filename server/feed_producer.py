@@ -4,9 +4,6 @@ import pika
 import json
 import time
 
-reload(sys)  # Reload does the trick!
-sys.setdefaultencoding('utf8')
-
 #get your own twitter credentials at dev.twitter.com
 consumer_key = "yWgVrEgMvI7cUl1MchvfT4XDD"
 consumer_secret = "5ERELN8CYErJIZcWJvHsA50czU9yURUZoTduOrjBvP3l9d10Ls"
