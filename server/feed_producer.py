@@ -40,7 +40,7 @@ class CustomStreamListener(tweepy.StreamListener):
         self.channel.queue_declare(queue='twitter_topic_feed')
 
     def on_status(self, status):
-        print status.text, "\n"
+        print(status.text)
 
         data = {}
         data['text'] = status.text
@@ -54,24 +54,22 @@ class CustomStreamListener(tweepy.StreamListener):
                                     body=json.dumps(data))
 
     def on_error(self, status_code):
-        print >> sys.stderr, 'Encountered error with status code:', status_code
+        print('Encountered error with status code:', status_code)
         return True  # Don't kill the stream
 
     def on_timeout(self):
-        print >> sys.stderr, 'Timeout...'
+        print('Timeout...')
         return True  # Don't kill the stream
 
+
 def createStream():
+
     try:
         sapi = tweepy.streaming.Stream(auth, CustomStreamListener(api))
         sapi.filter(locations=[-10.9795,51.417,-5.4271,55.4015])  
-		#Ireland -10.9795,51.417,-5.4271,55.4015
-		#Galway -9.3535,53.1194,-8.4813,53.4559
-    except UnicodeEncodeError, e:
-	    #print 'Unicode error, retry'
+        #Ireland -10.9795,51.417,-5.4271,55.4015
+        #Galway -9.3535,53.1194,-8.4813,53.4559
+    except UnicodeEncodeError as e:
+        #print 'Unicode error, retry'
         createStream()
 createStream()
-		
-
-   
-   

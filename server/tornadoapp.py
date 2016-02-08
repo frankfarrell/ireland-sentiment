@@ -11,12 +11,9 @@ import tornado.httpserver
 from tornado.options import define
 from tornado.options import options
 
-from client import PikaClient
-
-from handlers import ProducerHandler
-from handlers import ConsumerHandler
+from server.client import PikaClient
 from handlers import IndexHandler
-from dispatchers import Dispatcher
+from server.dispatchers import Dispatcher
 
 
 define("port", default=8888, help="run on the given port", type=int)

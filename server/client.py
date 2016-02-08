@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import os
 import logging
+import json
 
 import pika
 from pika.adapters.tornado_connection import TornadoConnection
-
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
-import json
-import time
-from tweetclassifier import Classifier
+
+from server.tweetclassifier import Classifier
 
 class PikaClient(object):
 
@@ -148,7 +146,7 @@ class PikaClient(object):
             print('PikaClient: listener %s removed' % repr(listener))
         except KeyError:
             pass
-		
+
     def get_messages(self):
         # Get the messages to return, then empty the list
         output = self.messages
@@ -173,8 +171,8 @@ class PikaClient(object):
     
     def classify_text(self,event_json):
         #Temporaray: Processing should happen in intermediary handler
-		#Parse JSON, return JSON with text geo and polarity
-        print "CLASSIFIER MESSAGE " + event_json
+        #Parse JSON, return JSON with text geo and polarity
+        print("CLASSIFIER MESSAGE " + event_json)
         parsedJson  =json.loads(event_json)
         tweettext = parsedJson['text'] 
         tweetgeo = parsedJson['geo']
